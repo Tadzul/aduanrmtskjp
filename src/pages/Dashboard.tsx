@@ -28,10 +28,10 @@ export function Dashboard() {
   }
 
   // Analytics Calculations
-  const totalHariIni = aduans.filter(a => isToday(a.createdAt)).length;
-  const totalMingguIni = aduans.filter(a => isThisWeek(a.createdAt)).length;
-  const totalBulanIni = aduans.filter(a => isThisMonth(a.createdAt)).length;
-  const totalTahunIni = aduans.filter(a => isThisYear(a.createdAt)).length;
+  const totalHariIni = aduans.filter(a => isToday(parseISO(a.tarikh))).length;
+  const totalMingguIni = aduans.filter(a => isThisWeek(parseISO(a.tarikh))).length;
+  const totalBulanIni = aduans.filter(a => isThisMonth(parseISO(a.tarikh))).length;
+  const totalTahunIni = aduans.filter(a => isThisYear(parseISO(a.tarikh))).length;
 
   const totalBelumDiambil = aduans.filter(a => a.status === 'Belum Diambil').length;
   const totalDalamTindakan = aduans.filter(a => a.status === 'Dalam Tindakan').length;

@@ -224,8 +224,7 @@ export function SenaraiAduan() {
       (a.keterangan || '').toLowerCase().includes(searchLower);
     const matchesStatus = filterStatus === 'Semua' || a.status === filterStatus;
     
-    // Guru can only see their own aduan, Admin sees all
-    const matchesRole = user?.role === 'Admin' || a.guruId === user?.id;
+    const matchesRole = true; // Allow Guru to see all aduan
 
     return matchesSearch && matchesStatus && matchesRole;
   });
