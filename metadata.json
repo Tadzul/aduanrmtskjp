@@ -1,0 +1,6 @@
+{
+  "name": "e-Aduan RMT",
+  "description": "Sistem Pengurusan e-Aduan Rancangan Makanan Tambahan (PWA)",
+  "requestFramePermissions": ["camera"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

@@ -1,0 +1,51 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Poppins", ui-sans-serif, system-ui, sans-serif;
+}
+
+body {
+  font-family: var(--font-sans);
+  background: linear-gradient(to bottom right, #E3F2FD, #ffffff, #E8F5E9);
+  background-attachment: fixed;
+  -webkit-tap-highlight-color: transparent;
+  min-height: 100vh;
+}
+
+.glass-card {
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.07);
+}
+
+.sidebar-item-active {
+  background: linear-gradient(90deg, #1976D2 0%, #42A5F5 100%);
+  color: white !important;
+}
+
+.btn-primary {
+  background: #1976D2;
+  color: white;
+  box-shadow: 0 4px 12px rgba(25, 118, 210, 0.2);
+}
+
+.status-pill {
+  padding: 2px 10px;
+  border-radius: 99px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+/* For signature canvas to hide scrollbars */
+.sigCanvas {
+  width: 100%;
+  height: 100%;
+}
+
+/* Safe area padding for mobile bottom nav on iOS */
+.pb-safe {
+  padding-bottom: env(safe-area-inset-bottom, 20px);
+}
+
