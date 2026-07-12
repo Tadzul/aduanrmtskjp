@@ -57,12 +57,15 @@ const initialUsers: User[] = [
 export const db = {
   async init() {
     const initialized = await localforage.getItem('initialized');
-    if (!initialized) {
+    const version = await localforage.getItem('db_version');
+    
+    if (!initialized || version !== 'v2') {
       await localforage.setItem('aduan', []);
       await localforage.setItem('gambar', []);
       await localforage.setItem('settings', {});
       await localforage.setItem('aduan_counter', 1);
       await localforage.setItem('initialized', true);
+      await localforage.setItem('db_version', 'v2');
     }
     // Always update users to ensure correct credentials in demo
     await localforage.setItem('users', initialUsers);
@@ -114,17 +117,9 @@ export const db = {
         const json = await res.json();
         if (json.success && json.data) {
           const gasData = json.data as Aduan[];
-          let updated = false;
-          for (const item of gasData) {
-            const exists = merged.find(a => a.id === item.id);
-            if (!exists) {
-              merged.push(item);
-              updated = true;
-            }
-          }
-          if (updated) {
-            await localforage.setItem('aduan', merged);
-          }
+          // Use GAS data as the source of truth to avoid ghost data from local storage
+          merged = gasData;
+          await localforage.setItem('aduan', merged);
         }
       } catch (e) {
         console.error('Failed to fetch from Google Sheets:', e);
