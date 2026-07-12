@@ -98,11 +98,28 @@ function doPost(e) {
           data.tindakanSusulan || '',
           data.lainLainTindakan || '',
           data.status,
-          imageUrls.join(', '),
+          imageUrls.join('\n'),
           signatureUrl,
           createdAt
         ];
         sheet.appendRow(rowData);
+        
+        // Make the image URLs clickable in Google Sheets
+        if (imageUrls.length > 0) {
+          const lastRow = sheet.getLastRow();
+          const pautanCell = sheet.getRange(lastRow, 14); // Column N
+          const text = imageUrls.join('\n');
+          let richText = SpreadsheetApp.newRichTextValue().setText(text);
+          let startIndex = 0;
+          
+          imageUrls.forEach(url => {
+            const endIndex = startIndex + url.length;
+            richText.setLinkUrl(startIndex, endIndex, url);
+            startIndex = endIndex + 1; // +1 for the newline
+          });
+          
+          pautanCell.setRichTextValue(richText.build());
+        }
       }
       
       return ContentService.createTextOutput(JSON.stringify({success: true})).setMimeType(ContentService.MimeType.JSON);
@@ -143,12 +160,24 @@ function doGet(e) {
         tindakanSusulan: obj['Tindakan Susulan'],
         lainLainTindakan: obj['Lain-Lain Tindakan'],
         status: obj['Status'],
-        gambars: obj['Pautan Gambar'] ? obj['Pautan Gambar'].split(', ').filter(Boolean).map(url => ({url})) : [],
+        gambars: obj['Pautan Gambar'] ? obj['Pautan Gambar'].split(/,\s*|\n/).filter(Boolean).map(url => ({url})) : [],
         tandatanganUrl: obj['Tandatangan'] || null
       };
     });
     
     return ContentService.createTextOutput(JSON.stringify({success: true, data: result})).setMimeType(ContentService.MimeType.JSON);
+  }
+  
+  if (e.parameter.action === 'getImage') {
+    try {
+      const fileId = e.parameter.id;
+      const file = DriveApp.getFileById(fileId);
+      const base64 = Utilities.base64Encode(file.getBlob().getBytes());
+      const mime = file.getMimeType();
+      return ContentService.createTextOutput(JSON.stringify({success: true, base64: `data:${mime};base64,${base64}`})).setMimeType(ContentService.MimeType.JSON);
+    } catch (err) {
+      return ContentService.createTextOutput(JSON.stringify({success: false, error: err.toString()})).setMimeType(ContentService.MimeType.JSON);
+    }
   }
   
   return ContentService.createTextOutput(JSON.stringify({success: false, message: "Action not found"})).setMimeType(ContentService.MimeType.JSON);

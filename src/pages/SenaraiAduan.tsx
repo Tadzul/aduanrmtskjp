@@ -49,11 +49,16 @@ export function SenaraiAduan() {
   };
 
   const handlePreview = async (aduan: Aduan) => {
-    let images = [];
-    if ((aduan as any).gambars) {
-      images = (aduan as any).gambars;
-    } else {
-      images = await db.getGambarByAduanId(aduan.id);
+    let images = await db.getGambarByAduanId(aduan.id);
+    if (!images || images.length === 0) {
+      const gasImages = (aduan as any).gambars || [];
+      images = gasImages.map((img: any) => {
+        const match = img.url.match(/\/d\/(.*?)\//);
+        if (match && match[1]) {
+           return { base64: `https://drive.google.com/uc?export=view&id=${match[1]}` };
+        }
+        return { base64: img.url };
+      });
     }
     setPreviewImages(images);
     setPreviewAduan(aduan);
@@ -151,11 +156,29 @@ export function SenaraiAduan() {
       y += 10;
 
       // Add Complaint Images
-      let images = [];
-      if ((printAduan as any).gambars) {
-        images = (printAduan as any).gambars;
-      } else {
-        images = await db.getGambarByAduanId(printAduan.id);
+      let images = await db.getGambarByAduanId(printAduan.id);
+      
+      if (!images || images.length === 0) {
+        const gasImages = (printAduan as any).gambars || [];
+        if (gasImages.length > 0) {
+          toast.info('Memuat turun gambar (Sila tunggu)...');
+          images = await Promise.all(gasImages.map(async (img: any) => {
+             const fileIdMatch = img.url.match(/\/d\/(.*?)\//);
+             if (fileIdMatch && fileIdMatch[1]) {
+                const appsScriptUrl = import.meta.env.VITE_APPS_SCRIPT_URL || 'https://script.google.com/macros/s/AKfycbz7_KiYdVZdkJynd8uITGb4-T9Q8TJNsqKvzoIR4WP8hgkKQuu00_wOyQEEJfYym8_J/exec';
+                try {
+                  const res = await fetch(`${appsScriptUrl}?action=getImage&id=${fileIdMatch[1]}`);
+                  const json = await res.json();
+                  if (json.success && json.base64) {
+                     return { base64: json.base64 };
+                  }
+                } catch(e) {
+                   console.error('Error fetching image base64', e);
+                }
+             }
+             return { base64: img.url }; // fallback
+          }));
+        }
       }
 
       if (images && images.length > 0) {
@@ -165,7 +188,8 @@ export function SenaraiAduan() {
         y += 10;
         let xPos = 20;
         let maxHeight = 0;
-        images.slice(0, 4).forEach((img: any) => { // limit to 4 images to avoid overflow
+        
+        for (const img of images.slice(0, 4)) {
           if (xPos > 150) {
             y += maxHeight + 10;
             xPos = 20;
@@ -173,11 +197,13 @@ export function SenaraiAduan() {
           }
           if (y > 240) { doc.addPage(); y = 20; }
           try {
-            doc.addImage(img.base64 || img.url, 'JPEG', xPos, y, 40, 40);
+            doc.addImage(img.base64 || (img as any).url, 'JPEG', xPos, y, 40, 40);
             maxHeight = Math.max(maxHeight, 40);
             xPos += 45;
-          } catch(e) {}
-        });
+          } catch(e) {
+            console.error('Failed to add image to PDF', e);
+          }
+        }
         y += maxHeight + 15;
       }
       
