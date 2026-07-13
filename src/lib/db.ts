@@ -39,6 +39,7 @@ export interface Aduan {
   status: AduanStatus;
   tandatangan?: string; // Base64 or ID
   createdAt: number;
+  deleted?: boolean;
 }
 
 export interface Gambar {
@@ -96,6 +97,8 @@ export const db = {
         
         await fetch(appsScriptUrl, {
           method: 'POST',
+          mode: 'no-cors',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
           body: JSON.stringify(payload),
         });
       } catch (e) {
@@ -117,8 +120,25 @@ export const db = {
         const json = await res.json();
         if (json.success && json.data) {
           const gasData = json.data as Aduan[];
-          // Use GAS data as the source of truth to avoid ghost data from local storage
-          merged = gasData;
+          
+          // Merge GAS data with local edits
+          const localEdits = await localforage.getItem<Record<string, Aduan>>('local_edits') || {};
+          
+          merged = gasData.map(gasItem => {
+            if (localEdits[gasItem.id]) {
+               return { ...gasItem, ...localEdits[gasItem.id] };
+            }
+            return gasItem;
+          });
+          
+          // Add local pending items that are not in GAS yet
+          const gasIds = new Set(gasData.map(a => a.id));
+          localData.forEach(localItem => {
+            if (!gasIds.has(localItem.id) && !localItem.deleted && !(localItem as any).isStub) {
+              merged.push(localItem);
+            }
+          });
+          
           await localforage.setItem('aduan', merged);
         }
       } catch (e) {
@@ -127,7 +147,8 @@ export const db = {
     }
     
     // Filter out soft-deleted items
-    return merged.filter((a: any) => !a.deleted);
+    const deletedIds = await localforage.getItem<string[]>('deleted_aduans') || [];
+    return merged.filter((a: any) => !a.deleted && !deletedIds.includes(a.id));
   },
 
   async getAduanById(id: string): Promise<Aduan | null> {
@@ -157,13 +178,20 @@ export const db = {
     }
     
     await localforage.setItem('aduan', localData);
+    
+    // Record local edit
+    const localEdits = await localforage.getItem<Record<string, Aduan>>('local_edits') || {};
+    localEdits[newAduan.id] = newAduan;
+    await localforage.setItem('local_edits', localEdits);
 
     // Sync simple edit to GAS if appsScriptUrl exists
     const appsScriptUrl = import.meta.env.VITE_APPS_SCRIPT_URL || 'https://script.google.com/macros/s/AKfycbz7_KiYdVZdkJynd8uITGb4-T9Q8TJNsqKvzoIR4WP8hgkKQuu00_wOyQEEJfYym8_J/exec';
-    if (appsScriptUrl && existingIndex > -1) {
+    if (appsScriptUrl) {
       try {
         await fetch(appsScriptUrl, {
           method: 'POST',
+          mode: 'no-cors',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
           body: JSON.stringify({
             action: 'saveAduan',
             data: newAduan // Images aren't sent here because it's just a status/text edit
@@ -189,13 +217,22 @@ export const db = {
       await localforage.setItem('aduan', localData);
     }
 
+    // Keep track of deleted IDs permanently in local storage to prevent ghost data from GAS
+    const deletedIds = await localforage.getItem<string[]>('deleted_aduans') || [];
+    if (!deletedIds.includes(id)) {
+      deletedIds.push(id);
+      await localforage.setItem('deleted_aduans', deletedIds);
+    }
+
     const appsScriptUrl = import.meta.env.VITE_APPS_SCRIPT_URL || 'https://script.google.com/macros/s/AKfycbz7_KiYdVZdkJynd8uITGb4-T9Q8TJNsqKvzoIR4WP8hgkKQuu00_wOyQEEJfYym8_J/exec';
     if (appsScriptUrl) {
       try {
         await fetch(appsScriptUrl, {
           method: 'POST',
+          mode: 'no-cors',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
           body: JSON.stringify({
-            action: 'deleteAduan', // In case GAS supports it
+            action: 'deleteAduan',
             data: { id }
           }),
         });
