@@ -80,7 +80,10 @@ function doPost(e) {
       }
 
       if (rowIndex > -1) {
-        // If it's an update, we only update status and perhaps noAduan (we don't reupload images if not passed)
+        // Update fields that can be modified during edit
+        sheet.getRange(rowIndex, 10).setValue(data.keterangan || ''); // Keterangan is column 10 (J)
+        sheet.getRange(rowIndex, 11).setValue(data.tindakanSusulan || ''); // Tindakan Susulan is column 11 (K)
+        sheet.getRange(rowIndex, 12).setValue(data.lainLainTindakan || ''); // Lain-Lain Tindakan is column 12 (L)
         sheet.getRange(rowIndex, 13).setValue(data.status); // Status is column 13 (M)
       } else {
         // New Row
