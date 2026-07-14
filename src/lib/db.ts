@@ -26,6 +26,7 @@ export interface Aduan {
   noAduan: string;
   guruId: string;
   namaPelapor?: string;
+  kategoriAduan?: 'RMT' | 'Kantin';
   tarikh: string; // ISO Date String
   masa: string; // HH:mm format
   lokasi: string;
@@ -77,7 +78,7 @@ export const db = {
   },
 
   async saveAduanComplete(aduan: Omit<Aduan, 'noAduan'>, images: Gambar[]): Promise<Aduan> {
-    const appsScriptUrl = import.meta.env.VITE_APPS_SCRIPT_URL || 'https://script.google.com/macros/s/AKfycbz7_KiYdVZdkJynd8uITGb4-T9Q8TJNsqKvzoIR4WP8hgkKQuu00_wOyQEEJfYym8_J/exec';
+    const appsScriptUrl = import.meta.env.VITE_APPS_SCRIPT_URL || 'https://script.google.com/macros/s/AKfycbzL4tFDPcur0UVhK_3A983NyEftBAsrlmUymv6ygzYdVHxV5ToLiXu4PpHeCi0wo5M1/exec';
 
     // First save to localforage to have offline support/fallback
     const savedAduan = await this.saveAduan(aduan);
@@ -111,7 +112,7 @@ export const db = {
 
   async getAduan(): Promise<Aduan[]> {
     const localData = await localforage.getItem<Aduan[]>('aduan') || [];
-    const appsScriptUrl = import.meta.env.VITE_APPS_SCRIPT_URL || 'https://script.google.com/macros/s/AKfycbz7_KiYdVZdkJynd8uITGb4-T9Q8TJNsqKvzoIR4WP8hgkKQuu00_wOyQEEJfYym8_J/exec';
+    const appsScriptUrl = import.meta.env.VITE_APPS_SCRIPT_URL || 'https://script.google.com/macros/s/AKfycbzL4tFDPcur0UVhK_3A983NyEftBAsrlmUymv6ygzYdVHxV5ToLiXu4PpHeCi0wo5M1/exec';
     let merged = [...localData];
 
     if (appsScriptUrl) {
@@ -162,10 +163,16 @@ export const db = {
     // Generate No Aduan if new
     let noAduan = (aduan as Aduan).noAduan;
     if (!noAduan) {
-      const counter = await localforage.getItem<number>('aduan_counter') || 1;
       const year = new Date().getFullYear();
-      noAduan = `RMT-${year}-${counter.toString().padStart(5, '0')}`;
-      await localforage.setItem('aduan_counter', counter + 1);
+      if (aduan.kategoriAduan === 'Kantin') {
+        const counter = await localforage.getItem<number>('kantin_aduan_counter') || 1;
+        noAduan = `KANTIN-${year}-${counter.toString().padStart(5, '0')}`;
+        await localforage.setItem('kantin_aduan_counter', counter + 1);
+      } else {
+        const counter = await localforage.getItem<number>('aduan_counter') || 1;
+        noAduan = `RMT-${year}-${counter.toString().padStart(5, '0')}`;
+        await localforage.setItem('aduan_counter', counter + 1);
+      }
     }
 
     const newAduan = { ...aduan, noAduan } as Aduan;
@@ -185,7 +192,7 @@ export const db = {
     await localforage.setItem('local_edits', localEdits);
 
     // Sync simple edit to GAS if appsScriptUrl exists
-    const appsScriptUrl = import.meta.env.VITE_APPS_SCRIPT_URL || 'https://script.google.com/macros/s/AKfycbz7_KiYdVZdkJynd8uITGb4-T9Q8TJNsqKvzoIR4WP8hgkKQuu00_wOyQEEJfYym8_J/exec';
+    const appsScriptUrl = import.meta.env.VITE_APPS_SCRIPT_URL || 'https://script.google.com/macros/s/AKfycbzL4tFDPcur0UVhK_3A983NyEftBAsrlmUymv6ygzYdVHxV5ToLiXu4PpHeCi0wo5M1/exec';
     if (appsScriptUrl) {
       try {
         await fetch(appsScriptUrl, {
@@ -224,7 +231,7 @@ export const db = {
       await localforage.setItem('deleted_aduans', deletedIds);
     }
 
-    const appsScriptUrl = import.meta.env.VITE_APPS_SCRIPT_URL || 'https://script.google.com/macros/s/AKfycbz7_KiYdVZdkJynd8uITGb4-T9Q8TJNsqKvzoIR4WP8hgkKQuu00_wOyQEEJfYym8_J/exec';
+    const appsScriptUrl = import.meta.env.VITE_APPS_SCRIPT_URL || 'https://script.google.com/macros/s/AKfycbzL4tFDPcur0UVhK_3A983NyEftBAsrlmUymv6ygzYdVHxV5ToLiXu4PpHeCi0wo5M1/exec';
     if (appsScriptUrl) {
       try {
         await fetch(appsScriptUrl, {

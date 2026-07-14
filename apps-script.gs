@@ -11,6 +11,7 @@ function setup() {
   const headers = [
     'ID',
     'No Aduan',
+    'Kategori Aduan',
     'Nama Pelapor',
     'Tarikh',
     'Masa',
@@ -81,15 +82,16 @@ function doPost(e) {
 
       if (rowIndex > -1) {
         // Update fields that can be modified during edit
-        sheet.getRange(rowIndex, 10).setValue(data.keterangan || ''); // Keterangan is column 10 (J)
-        sheet.getRange(rowIndex, 11).setValue(data.tindakanSusulan || ''); // Tindakan Susulan is column 11 (K)
-        sheet.getRange(rowIndex, 12).setValue(data.lainLainTindakan || ''); // Lain-Lain Tindakan is column 12 (L)
-        sheet.getRange(rowIndex, 13).setValue(data.status); // Status is column 13 (M)
+        sheet.getRange(rowIndex, 11).setValue(data.keterangan || ''); // Keterangan is column 11 (K)
+        sheet.getRange(rowIndex, 12).setValue(data.tindakanSusulan || ''); // Tindakan Susulan is column 12 (L)
+        sheet.getRange(rowIndex, 13).setValue(data.lainLainTindakan || ''); // Lain-Lain Tindakan is column 13 (M)
+        sheet.getRange(rowIndex, 14).setValue(data.status); // Status is column 14 (N)
       } else {
         // New Row
         const rowData = [
           data.id,
           data.noAduan || '',
+          data.kategoriAduan || 'RMT',
           data.namaPelapor || data.guruId || '',
           data.tarikh,
           data.masa,
@@ -110,7 +112,7 @@ function doPost(e) {
         // Make the image URLs clickable in Google Sheets
         if (imageUrls.length > 0) {
           const lastRow = sheet.getLastRow();
-          const pautanCell = sheet.getRange(lastRow, 14); // Column N
+          const pautanCell = sheet.getRange(lastRow, 15); // Column O
           const text = imageUrls.join('\n');
           let richText = SpreadsheetApp.newRichTextValue().setText(text);
           let startIndex = 0;
@@ -152,6 +154,7 @@ function doGet(e) {
       return {
         id: obj['ID'],
         noAduan: obj['No Aduan'],
+        kategoriAduan: obj['Kategori Aduan'],
         namaPelapor: obj['Nama Pelapor'],
         tarikh: obj['Tarikh'],
         masa: obj['Masa'],

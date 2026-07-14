@@ -29,6 +29,9 @@ export function SenaraiAduan() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [filterStatus, setFilterStatus] = useState('Semua');
+  const [filterKategori, setFilterKategori] = useState<'Semua' | 'RMT' | 'Kantin'>('Semua');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(5);
   const [previewAduan, setPreviewAduan] = useState<Aduan | null>(null);
   const [previewImages, setPreviewImages] = useState<Gambar[]>([]);
 
@@ -120,7 +123,10 @@ export function SenaraiAduan() {
       doc.text('SEKOLAH KEBANGSAAN JALAN PEGOH', pageWidth/2, y + 5, { align: 'center' });
       y += 13;
       doc.setFontSize(14);
-      doc.text('LAPORAN ADUAN RANCANGAN MAKANAN TAMBAHAN (RMT)', pageWidth/2, y, { align: 'center' });
+      const tajuk = printAduan.kategoriAduan === 'Kantin' 
+        ? 'LAPORAN ADUAN KANTIN' 
+        : 'LAPORAN ADUAN RANCANGAN MAKANAN TAMBAHAN (RMT)';
+      doc.text(tajuk, pageWidth/2, y, { align: 'center' });
       y += 10;
       
       doc.line(20, y, pageWidth - 20, y);
@@ -144,6 +150,7 @@ export function SenaraiAduan() {
       addRow('Nama Pelapor', printAduan.namaPelapor || printAduan.guruId);
       addRow('Tarikh', format(parseISO(printAduan.tarikh), 'dd/MM/yyyy'));
       addRow('Masa', formatMasa(printAduan.masa));
+      addRow('Kategori Aduan', printAduan.kategoriAduan || 'RMT');
       addRow('Lokasi', printAduan.lokasi);
       addRow('Pengusaha Kantin', printAduan.pengusaha);
       addRow('Status', printAduan.status);
@@ -165,7 +172,7 @@ export function SenaraiAduan() {
           images = await Promise.all(gasImages.map(async (img: any) => {
              const fileIdMatch = img.url.match(/\/d\/(.*?)\//);
              if (fileIdMatch && fileIdMatch[1]) {
-                const appsScriptUrl = import.meta.env.VITE_APPS_SCRIPT_URL || 'https://script.google.com/macros/s/AKfycbz7_KiYdVZdkJynd8uITGb4-T9Q8TJNsqKvzoIR4WP8hgkKQuu00_wOyQEEJfYym8_J/exec';
+                const appsScriptUrl = import.meta.env.VITE_APPS_SCRIPT_URL || 'https://script.google.com/macros/s/AKfycbzL4tFDPcur0UVhK_3A983NyEftBAsrlmUymv6ygzYdVHxV5ToLiXu4PpHeCi0wo5M1/exec';
                 try {
                   const res = await fetch(`${appsScriptUrl}?action=getImage&id=${fileIdMatch[1]}`);
                   const json = await res.json();
@@ -250,10 +257,22 @@ export function SenaraiAduan() {
       (a.keterangan || '').toLowerCase().includes(searchLower);
     const matchesStatus = filterStatus === 'Semua' || a.status === filterStatus;
     
+    const cat = a.kategoriAduan || 'RMT';
+    const matchesKategori = filterKategori === 'Semua' || cat === filterKategori;
+    
     const matchesRole = true; // Allow Guru to see all aduan
 
-    return matchesSearch && matchesStatus && matchesRole;
+    return matchesSearch && matchesStatus && matchesKategori && matchesRole;
   });
+
+  // Reset page to 1 when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [search, filterStatus, filterKategori]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredAduans.length / itemsPerPage));
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const paginatedAduans = filteredAduans.slice(startIndex, startIndex + itemsPerPage);
 
   const StatusBadge = ({ status }: { status: string }) => {
     const colors = {
@@ -300,18 +319,32 @@ export function SenaraiAduan() {
               className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-blue-500 outline-none bg-slate-50"
             />
           </div>
-          <div className="relative w-full md:w-64">
-            <Filter className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-            <select 
-              value={filterStatus}
-              onChange={e => setFilterStatus(e.target.value)}
-              className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-blue-500 outline-none bg-slate-50 appearance-none"
-            >
-              <option value="Semua">Semua Status</option>
-              <option value="Belum Diambil">Belum Diambil</option>
-              <option value="Dalam Tindakan">Dalam Tindakan</option>
-              <option value="Selesai">Selesai</option>
-            </select>
+          <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
+            <div className="relative w-full md:w-48">
+              <Filter className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+              <select 
+                value={filterKategori}
+                onChange={e => setFilterKategori(e.target.value as any)}
+                className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-blue-500 outline-none bg-slate-50 appearance-none"
+              >
+                <option value="Semua">Semua Kategori</option>
+                <option value="RMT">RMT</option>
+                <option value="Kantin">Kantin</option>
+              </select>
+            </div>
+            <div className="relative w-full md:w-48">
+              <Filter className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+              <select 
+                value={filterStatus}
+                onChange={e => setFilterStatus(e.target.value)}
+                className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-blue-500 outline-none bg-slate-50 appearance-none"
+              >
+                <option value="Semua">Semua Status</option>
+                <option value="Belum Diambil">Belum Diambil</option>
+                <option value="Dalam Tindakan">Dalam Tindakan</option>
+                <option value="Selesai">Selesai</option>
+              </select>
+            </div>
           </div>
         </div>
 
@@ -322,24 +355,29 @@ export function SenaraiAduan() {
               <tr className="border-b border-slate-200 text-sm text-slate-500 font-medium">
                 <th className="pb-3 pl-2">No Aduan</th>
                 <th className="pb-3">Tarikh</th>
+                <th className="pb-3">Kategori & Lokasi</th>
                 <th className="pb-3">Nama Pelapor</th>
-                <th className="pb-3">Lokasi</th>
                 <th className="pb-3">Status</th>
                 <th className="pb-3 text-right pr-2">Tindakan</th>
               </tr>
             </thead>
             <tbody>
-              {filteredAduans.length === 0 && (
+              {paginatedAduans.length === 0 && (
                 <tr>
                   <td colSpan={6} className="py-8 text-center text-slate-500">Tiada rekod aduan dijumpai.</td>
                 </tr>
               )}
-              {filteredAduans.map(aduan => (
+              {paginatedAduans.map(aduan => (
                 <tr key={aduan.id} className="border-b border-slate-100 hover:bg-slate-50/50 transition-colors">
                   <td className="py-4 pl-2 font-medium text-slate-800">{aduan.noAduan}</td>
                   <td className="py-4 text-slate-600">{format(parseISO(aduan.tarikh), 'dd/MM/yyyy')} <br/><span className="text-xs text-slate-400">{formatMasa(aduan.masa)}</span></td>
+                  <td className="py-4 text-slate-600 font-medium">
+                    <span className={`inline-block px-2 py-1 rounded text-xs mr-2 ${aduan.kategoriAduan === 'Kantin' ? 'bg-orange-100 text-orange-700' : 'bg-emerald-100 text-emerald-700'}`}>
+                      {aduan.kategoriAduan || 'RMT'}
+                    </span>
+                    {aduan.lokasi}
+                  </td>
                   <td className="py-4 text-slate-600">{aduan.namaPelapor || aduan.guruId}</td>
-                  <td className="py-4 text-slate-600">{aduan.lokasi}</td>
                   <td className="py-4"><StatusBadge status={aduan.status} /></td>
                   <td className="py-4 text-right pr-2">
                     <div className="flex justify-end space-x-2">
@@ -374,10 +412,10 @@ export function SenaraiAduan() {
 
         {/* Mobile Cards */}
         <div className="md:hidden space-y-4">
-          {filteredAduans.length === 0 && (
+          {paginatedAduans.length === 0 && (
             <div className="py-8 text-center text-slate-500">Tiada rekod aduan dijumpai.</div>
           )}
-          {filteredAduans.map(aduan => (
+          {paginatedAduans.map(aduan => (
             <div key={aduan.id} className="bg-slate-50 border border-slate-100 rounded-2xl p-4 space-y-3">
               <div className="flex justify-between items-start">
                 <div>
@@ -390,7 +428,12 @@ export function SenaraiAduan() {
                 <p className="text-sm text-slate-600 line-clamp-2">{aduan.keterangan}</p>
               </div>
               <div className="flex items-center justify-between pt-2 border-t border-slate-200">
-                <span className="text-xs font-medium text-slate-500">{aduan.lokasi}</span>
+                <span className="text-xs font-medium text-slate-500 flex items-center gap-2">
+                  <span className={`px-2 py-0.5 rounded ${aduan.kategoriAduan === 'Kantin' ? 'bg-orange-100 text-orange-700' : 'bg-emerald-100 text-emerald-700'}`}>
+                    {aduan.kategoriAduan || 'RMT'}
+                  </span>
+                  {aduan.lokasi}
+                </span>
                 <div className="flex space-x-1">
                   <button onClick={() => handlePreview(aduan)} className="p-2 text-slate-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors">
                     <Eye size={16} />
@@ -418,6 +461,50 @@ export function SenaraiAduan() {
             </div>
           ))}
         </div>
+
+        {/* Pagination Controls */}
+        {filteredAduans.length > 0 && (
+          <div className="flex flex-col sm:flex-row items-center justify-between pt-4 border-t border-slate-100 gap-4 mt-6">
+            <div className="flex items-center space-x-2 text-sm text-slate-600">
+              <span>Papar</span>
+              <select 
+                value={itemsPerPage} 
+                onChange={(e) => {
+                  setItemsPerPage(Number(e.target.value));
+                  setCurrentPage(1);
+                }}
+                className="border border-slate-200 rounded-lg px-2 py-1 outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+              >
+                <option value={5}>5</option>
+                <option value={10}>10</option>
+                <option value={20}>20</option>
+                <option value={30}>30</option>
+                <option value={50}>50</option>
+              </select>
+              <span>aduan</span>
+            </div>
+            
+            <div className="flex items-center space-x-2">
+              <button 
+                onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                disabled={currentPage === 1}
+                className="px-3 py-1 rounded-lg border border-slate-200 text-sm font-medium text-slate-600 disabled:opacity-50 hover:bg-slate-50 transition-colors bg-white"
+              >
+                Sebelum
+              </button>
+              <span className="text-sm text-slate-600 font-medium">
+                Muka {currentPage} dari {totalPages}
+              </span>
+              <button 
+                onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                disabled={currentPage === totalPages}
+                className="px-3 py-1 rounded-lg border border-slate-200 text-sm font-medium text-slate-600 disabled:opacity-50 hover:bg-slate-50 transition-colors bg-white"
+              >
+                Seterusnya
+              </button>
+            </div>
+          </div>
+        )}
 
       </div>
 

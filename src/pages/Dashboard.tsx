@@ -13,6 +13,7 @@ const COLORS = ['#3b82f6', '#f59e0b', '#10b981', '#ef4444', '#8b5cf6', '#ec4899'
 export function Dashboard() {
   const [aduans, setAduans] = useState<Aduan[]>([]);
   const [loading, setLoading] = useState(true);
+  const [filterKategori, setFilterKategori] = useState<'Semua' | 'RMT' | 'Kantin'>('Semua');
 
   useEffect(() => {
     const loadData = async () => {
@@ -27,19 +28,25 @@ export function Dashboard() {
     return <div className="flex justify-center items-center h-64"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div></div>;
   }
 
-  // Analytics Calculations
-  const totalHariIni = aduans.filter(a => isToday(parseISO(a.tarikh))).length;
-  const totalMingguIni = aduans.filter(a => isThisWeek(parseISO(a.tarikh))).length;
-  const totalBulanIni = aduans.filter(a => isThisMonth(parseISO(a.tarikh))).length;
-  const totalTahunIni = aduans.filter(a => isThisYear(parseISO(a.tarikh))).length;
+  const filteredAduans = aduans.filter(a => {
+    if (filterKategori === 'Semua') return true;
+    const cat = a.kategoriAduan || 'RMT';
+    return cat === filterKategori;
+  });
 
-  const totalBelumDiambil = aduans.filter(a => a.status === 'Belum Diambil').length;
-  const totalDalamTindakan = aduans.filter(a => a.status === 'Dalam Tindakan').length;
-  const totalSelesai = aduans.filter(a => a.status === 'Selesai').length;
+  // Analytics Calculations
+  const totalHariIni = filteredAduans.filter(a => isToday(parseISO(a.tarikh))).length;
+  const totalMingguIni = filteredAduans.filter(a => isThisWeek(parseISO(a.tarikh))).length;
+  const totalBulanIni = filteredAduans.filter(a => isThisMonth(parseISO(a.tarikh))).length;
+  const totalTahunIni = filteredAduans.filter(a => isThisYear(parseISO(a.tarikh))).length;
+
+  const totalBelumDiambil = filteredAduans.filter(a => a.status === 'Belum Diambil').length;
+  const totalDalamTindakan = filteredAduans.filter(a => a.status === 'Dalam Tindakan').length;
+  const totalSelesai = filteredAduans.filter(a => a.status === 'Selesai').length;
 
   // Pie Chart: Jenis Aduan
   const jenisAduanCount: Record<string, number> = {};
-  aduans.forEach(a => {
+  filteredAduans.forEach(a => {
     a.jenisAduan.forEach(j => {
       jenisAduanCount[j] = (jenisAduanCount[j] || 0) + 1;
     });
@@ -48,7 +55,7 @@ export function Dashboard() {
 
   // Bar Chart: Aduan Mengikut Bulan
   const bulanCount: Record<string, number> = {};
-  aduans.forEach(a => {
+  filteredAduans.forEach(a => {
     const month = format(parseISO(a.tarikh), 'MMM yyyy');
     bulanCount[month] = (bulanCount[month] || 0) + 1;
   });
@@ -74,9 +81,26 @@ export function Dashboard() {
       animate={{ opacity: 1, y: 0 }}
       className="space-y-6"
     >
-      <div>
-        <h1 className="text-2xl font-bold text-slate-800">Dashboard</h1>
-        <p className="text-slate-500">Ringkasan statistik e-Aduan RMT</p>
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-slate-800">Dashboard</h1>
+          <p className="text-slate-500">Ringkasan statistik e-Aduan</p>
+        </div>
+        <div className="flex bg-slate-100 p-1 rounded-xl">
+          {(['Semua', 'RMT', 'Kantin'] as const).map(kategori => (
+            <button
+              key={kategori}
+              onClick={() => setFilterKategori(kategori)}
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                filterKategori === kategori 
+                  ? 'bg-white text-blue-600 shadow-sm' 
+                  : 'text-slate-500 hover:text-slate-700'
+              }`}
+            >
+              {kategori}
+            </button>
+          ))}
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">

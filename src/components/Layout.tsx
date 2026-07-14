@@ -16,7 +16,8 @@ export function Layout() {
 
   const navItems = [
     { to: '/', icon: <LayoutDashboard size={20} />, label: 'Dashboard' },
-    { to: '/tambah', icon: <FilePlus2 size={20} />, label: 'Tambah Aduan' },
+    { to: '/tambah', icon: <FilePlus2 size={20} />, label: 'Aduan RMT' },
+    { to: '/tambah-kantin', icon: <FilePlus2 size={20} />, label: 'Aduan Kantin' },
     { to: '/senarai', icon: <List size={20} />, label: 'Senarai Aduan' },
   ];
 

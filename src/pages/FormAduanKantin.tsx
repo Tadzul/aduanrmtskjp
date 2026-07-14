@@ -24,17 +24,18 @@ const formatMasa = (masa: string) => {
 };
 
 const JENIS_ADUAN_OPTIONS = [
-  'Makanan tidak mencukupi',
-  'Menu tidak mengikut menu',
-  'Makanan tidak bersih / terdapat benda asing',
-  'Makanan basi atau berbau',
-  'Rasa kurang enak',
-  'Penyediaan lewat',
-  'Saiz hidangan tidak mencukupi',
+  'Kebersihan makanan',
+  'Kualiti makanan',
+  'Harga makanan',
+  'Menu kurang memuaskan',
+  'Keceriaan kantin dan kebersihan kantin',
+  'Rasa makanan',
+  'Susun atur hidangan',
+  'Layanan pekerja kantin',
   'Lain-lain'
 ];
 
-export function FormAduan() {
+export function FormAduanKantin() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [submitting, setSubmitting] = useState(false);
@@ -158,7 +159,7 @@ export function FormAduan() {
         id: generateId(),
         guruId: user?.id || '',
         namaPelapor,
-        kategoriAduan: 'RMT',
+        kategoriAduan: 'Kantin',
         tarikh,
         masa,
         lokasi,
@@ -193,8 +194,8 @@ export function FormAduan() {
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="max-w-4xl mx-auto space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-slate-800">Tambah Aduan RMT</h1>
-        <p className="text-slate-500">Isi maklumat aduan RMT di bawah</p>
+        <h1 className="text-2xl font-bold text-slate-800">Tambah Aduan Kantin</h1>
+        <p className="text-slate-500">Isi maklumat aduan Kantin di bawah</p>
       </div>
 
       <form onSubmit={handleSubmit} className="glass-card rounded-[24px] p-6 md:p-8 space-y-8">

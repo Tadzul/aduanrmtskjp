@@ -11,6 +11,7 @@ import { Layout } from './components/Layout';
 import { Login } from './pages/Login';
 import { Dashboard } from './pages/Dashboard';
 import { FormAduan } from './pages/FormAduan';
+import { FormAduanKantin } from './pages/FormAduanKantin';
 import { SenaraiAduan } from './pages/SenaraiAduan';
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
@@ -34,6 +35,7 @@ function AppRoutes() {
       <Route path="/" element={<ProtectedRoute><Layout /></ProtectedRoute>}>
         <Route index element={<Dashboard />} />
         <Route path="tambah" element={<FormAduan />} />
+        <Route path="tambah-kantin" element={<FormAduanKantin />} />
         <Route path="senarai" element={<SenaraiAduan />} />
         {/* Placeholder for Laporan - will just render Dashboard logic for now or simple message */}
         <Route path="laporan" element={<div className="p-8 text-center text-slate-500">Laporan terperinci sedang dibangunkan. Gunakan Senarai Aduan untuk export PDF/Excel.</div>} />
