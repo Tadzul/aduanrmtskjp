@@ -86,6 +86,24 @@ function doPost(e) {
         sheet.getRange(rowIndex, 12).setValue(data.tindakanSusulan || ''); // Tindakan Susulan is column 12 (L)
         sheet.getRange(rowIndex, 13).setValue(data.lainLainTindakan || ''); // Lain-Lain Tindakan is column 13 (M)
         sheet.getRange(rowIndex, 14).setValue(data.status); // Status is column 14 (N)
+        
+        if (imageUrls.length > 0) {
+          const pautanCell = sheet.getRange(rowIndex, 15); // Column O
+          const existingText = pautanCell.getValue();
+          const newText = existingText ? existingText + '\n' + imageUrls.join('\n') : imageUrls.join('\n');
+          
+          let richText = SpreadsheetApp.newRichTextValue().setText(newText);
+          const allUrls = newText.split('\n');
+          let startIndex = 0;
+          allUrls.forEach(url => {
+            if (url) {
+              const endIndex = startIndex + url.length;
+              richText.setLinkUrl(startIndex, endIndex, url);
+              startIndex = endIndex + 1; // +1 for the newline
+            }
+          });
+          pautanCell.setRichTextValue(richText.build());
+        }
       } else {
         // New Row
         const rowData = [

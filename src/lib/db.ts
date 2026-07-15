@@ -81,7 +81,7 @@ export const db = {
     const appsScriptUrl = import.meta.env.VITE_APPS_SCRIPT_URL || 'https://script.google.com/macros/s/AKfycbzL4tFDPcur0UVhK_3A983NyEftBAsrlmUymv6ygzYdVHxV5ToLiXu4PpHeCi0wo5M1/exec';
 
     // First save to localforage to have offline support/fallback
-    const savedAduan = await this.saveAduan(aduan);
+    const savedAduan = await this.saveAduan(aduan, true);
     for (const img of images) {
       await this.saveGambar({ ...img, aduanId: savedAduan.id });
     }
@@ -157,7 +157,7 @@ export const db = {
     return aduans.find(a => a.id === id) || null;
   },
 
-  async saveAduan(aduan: Omit<Aduan, 'noAduan'>): Promise<Aduan> {
+  async saveAduan(aduan: Omit<Aduan, 'noAduan'>, skipSync = false): Promise<Aduan> {
     const localData = await localforage.getItem<Aduan[]>('aduan') || [];
     
     // Generate No Aduan if new
@@ -193,7 +193,7 @@ export const db = {
 
     // Sync simple edit to GAS if appsScriptUrl exists
     const appsScriptUrl = import.meta.env.VITE_APPS_SCRIPT_URL || 'https://script.google.com/macros/s/AKfycbzL4tFDPcur0UVhK_3A983NyEftBAsrlmUymv6ygzYdVHxV5ToLiXu4PpHeCi0wo5M1/exec';
-    if (appsScriptUrl) {
+    if (appsScriptUrl && !skipSync) {
       try {
         await fetch(appsScriptUrl, {
           method: 'POST',

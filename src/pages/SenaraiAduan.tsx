@@ -204,7 +204,14 @@ export function SenaraiAduan() {
           }
           if (y > 240) { doc.addPage(); y = 20; }
           try {
-            doc.addImage(img.base64 || (img as any).url, 'JPEG', xPos, y, 40, 40);
+            const imageData = img.base64 || (img as any).url;
+            let format = 'JPEG';
+            if (imageData && imageData.startsWith('data:image/')) {
+              const mime = imageData.split(';')[0].split(':')[1];
+              if (mime === 'image/png') format = 'PNG';
+              else if (mime === 'image/webp') format = 'WEBP';
+            }
+            doc.addImage(imageData, format, xPos, y, 40, 40);
             maxHeight = Math.max(maxHeight, 40);
             xPos += 45;
           } catch(e) {
